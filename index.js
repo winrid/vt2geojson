@@ -82,10 +82,20 @@ function readTile(args, buffer, callback) {
                 var feature = layer.feature(i).toGeoJSON(args.x, args.y, args.z);
                 if (layers.length > 1) feature.properties.vt_layer = layerID;
                 feature.type = layer.name;
+
+                // Always return the same structure.
+                if (isArray(feature.geometry.coordinates[0]) && !isArray(feature.geometry.coordinates[0][0])) {
+                    feature.geometry.coordinates = [feature.geometry.coordinates];
+                }
+
                 collection.features.push(feature);
             }
         }
     });
 
     callback(null, collection);
+}
+
+function isArray(obj) {
+    return obj instanceof Array;
 }
