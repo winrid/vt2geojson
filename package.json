@@ -1,5 +1,5 @@
 {
-  "name": "@mapbox/vt2geojson",
+  "name": "vt2geojson",
   "description": "Dump vector tiles to GeoJSON",
   "version": "1.1.5",
   "main": "index.js",

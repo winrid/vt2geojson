@@ -68,7 +68,7 @@ function readTile(args, buffer, callback) {
     }
 
     var tile = new vt.VectorTile(new Protobuf(buffer));
-    var layers = args.layer || Object.keys(tile.layers);
+    var layers = args.layers || Object.keys(tile.layers);
 
     if (!Array.isArray(layers))
         layers = [layers]
@@ -80,15 +80,22 @@ function readTile(args, buffer, callback) {
         if (layer) {
             for (var i = 0; i < layer.length; i++) {
                 var feature = layer.feature(i).toGeoJSON(args.x, args.y, args.z);
+
                 if (layers.length > 1) feature.properties.vt_layer = layerID;
                 feature.type = layer.name;
 
-                // Always return the same structure.
+                let valid = true;
+                //Always return the same structure.
                 if (isArray(feature.geometry.coordinates[0]) && !isArray(feature.geometry.coordinates[0][0])) {
                     feature.geometry.coordinates = [feature.geometry.coordinates];
+                } else if(isArray(feature.geometry.coordinates[0]) && isArray(feature.geometry.coordinates[0][0]) && isArray(feature.geometry.coordinates[0][0][0])) {
+                    console.log('IGNORING', feature); // we need to get our backend structure to work with multipolygons - currently we ony support three levels of nesting
+                    valid = false;
                 }
 
-                collection.features.push(feature);
+                if (valid) {
+                    collection.features.push(feature);
+                }
             }
         }
     });
