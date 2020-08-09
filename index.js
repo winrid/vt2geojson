@@ -81,6 +81,7 @@ function readTile(args, buffer, callback) {
             for (var i = 0; i < layer.length; i++) {
                 var feature = layer.feature(i).toGeoJSON(args.x, args.y, args.z);
                 if (layers.length > 1) feature.properties.vt_layer = layerID;
+                feature.type = layer.name;
                 collection.features.push(feature);
             }
         }
