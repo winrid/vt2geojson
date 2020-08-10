@@ -8,7 +8,7 @@ var fs = require('fs');
 var url = require('url');
 var zlib = require('zlib');
 
-module.exports = function(args, callback) {
+module.exports = function (args, callback) {
 
     if (!args.uri) return callback(new Error('No URI found. Please provide a valid URI to your vector tile.'));
 
@@ -46,10 +46,10 @@ module.exports = function(args, callback) {
         if (parsed.protocol && parsed.protocol === 'file:') {
             args.uri = parsed.host + parsed.pathname;
         }
-        fs.lstat(args.uri, function(err, stats) {
+        fs.lstat(args.uri, function (err, stats) {
             if (err) throw err;
             if (stats.isFile()) {
-                fs.readFile(args.uri, function(err, data) {
+                fs.readFile(args.uri, function (err, data) {
                     if (err) throw err;
                     readTile(args, data, callback);
                 });
@@ -84,20 +84,33 @@ function readTile(args, buffer, callback) {
                 if (layers.length > 1) feature.properties.vt_layer = layerID;
                 feature.type = layer.name;
 
-                let valid = true;
-                //Always return the same structure.
-                if (!isArray(feature.geometry.coordinates[0])) {
-                    console.log('IGNORING', feature); // ignore these - seems like they are all points which we have no use for yet
-                    valid = false;
-                } else if (isArray(feature.geometry.coordinates[0]) && !isArray(feature.geometry.coordinates[0][0])) {
-                    feature.geometry.coordinates = [feature.geometry.coordinates];
-                } else if(isArray(feature.geometry.coordinates[0]) && isArray(feature.geometry.coordinates[0][0]) && isArray(feature.geometry.coordinates[0][0][0])) {
-                    console.log('IGNORING', feature); // we need to get our backend structure to work with multipolygons - currently we ony support three levels of nesting
-                    valid = false;
+                const features = [];
+                if (feature.geometry.type === 'MultiPolygon') {
+                    for (const coordinates of feature.geometry.coordinates) {
+                        const clonedFeature = JSON.parse(JSON.stringify(feature));
+                        clonedFeature.geometry.coordinates = coordinates;
+                        features.push(clonedFeature);
+                    }
+                } else {
+                    features.push(feature);
                 }
 
-                if (valid) {
-                    collection.features.push(feature);
+                for (const feature of features) {
+                    let valid = true;
+                    //Always return the same structure.
+                    if (!isArray(feature.geometry.coordinates[0])) {
+                        console.log('IGNORING', feature); // ignore these - seems like they are all points which we have no use for yet
+                        valid = false;
+                    } else if (isArray(feature.geometry.coordinates[0]) && !isArray(feature.geometry.coordinates[0][0])) {
+                        feature.geometry.coordinates = [feature.geometry.coordinates];
+                    } else if (isArray(feature.geometry.coordinates[0]) && isArray(feature.geometry.coordinates[0][0]) && isArray(feature.geometry.coordinates[0][0][0])) {
+                        console.log('IGNORING', feature); // we need to get our backend structure to work with multipolygons - currently we ony support three levels of nesting
+                        valid = false;
+                    }
+
+                    if (valid) {
+                        collection.features.push(feature);
+                    }
                 }
             }
         }
