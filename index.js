@@ -99,16 +99,23 @@ function readTile(args, buffer, callback) {
                     let valid = true;
                     //Always return the same structure.
                     if (!isArray(feature.geometry.coordinates[0])) {
-                        console.log('IGNORING', feature); // ignore these - seems like they are all points which we have no use for yet
+                        console.log('IGNORING', layerID, feature); // ignore these - seems like they are all points which we have no use for yet
                         valid = false;
                     } else if (isArray(feature.geometry.coordinates[0]) && !isArray(feature.geometry.coordinates[0][0])) {
                         feature.geometry.coordinates = [feature.geometry.coordinates];
                     } else if (isArray(feature.geometry.coordinates[0]) && isArray(feature.geometry.coordinates[0][0]) && isArray(feature.geometry.coordinates[0][0][0])) {
-                        console.log('IGNORING', feature); // we need to get our backend structure to work with multipolygons - currently we ony support three levels of nesting
+                        console.log('IGNORING', layerID, feature); // we need to get our backend structure to work with multipolygons - currently we ony support three levels of nesting
                         valid = false;
                     }
 
                     if (valid) {
+                        if (layerID === 'landuse' || layerID === 'landuse_overlay') {
+                            if (!feature.properties.type) {
+                                if (feature.properties.class) {
+                                    feature.properties.type = feature.properties.class;
+                                }
+                            }
+                        }
                         collection.features.push(feature);
                     }
                 }
